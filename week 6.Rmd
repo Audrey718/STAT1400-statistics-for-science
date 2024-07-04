@@ -1,0 +1,729 @@
+---
+title: "STAT1400 Statistics for Science"
+subtitle: "Computer Lab Week 6"
+output:
+  html_document: 
+    toc: true
+  html_notebook: default
+  pdf_document: 
+    toc: true
+    number_sections: yes
+  word_document: 
+    toc: true
+# date: '`r format(Sys.time(), "%d %B %Y, %H:%M ")`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(prompt=FALSE, comment=NA, message=FALSE, tidy=TRUE, error=FALSE, eval=TRUE)
+```
+
+
+# Learning Check
+
+In this lab you should read through and run the code in the lab sheet and complete the lab assessment. 
+
+When you complete this session, you will be able to:
+
+1. sample data from different discrete and continuous distributions in R;
+
+2. visualise the samples;
+
+3. calculate expectation and variance of random variables in R;
+
+4. calculate probabilities and quantiles of random variables in R;
+
+5. learn about the sample distribution;
+
+6. understand and calculate conditional probabilities.
+
+
+# Copyright and UWA unit content
+
+**Is it OK to download and share course material such as lectures, unit outlines, exam papers, articles and ebooks?**
+
+UWA is committed to providing easy access to learning material and many of your lectures are available for online access via the Lecture Capture System (LCS), accessible through the LMS. Your unit coordinator may make their lecture recordings available to download if they wish. You are allowed to access recorded lectures in the format they are supplied on the LCS – so if they are not made available to download, you must not use any software or devices to attempt to download them.
+
+All recorded lectures and other course material, such as presentation slides, lecture and tutorial handouts, unit outlines and exam papers, are protected under the Copyright Act and remain the property of the University. You are not allowed to share these materials outside of the LMS – for example, by uploading them to study resource file sharing websites or emailing them to friends at other universities. Distributing course material outside of the LMS is a breach of the University Policy on Academic Conduct and students found to be sharing material on these sites will be penalised. University data, emails and software are also protected by copyright and should not be accessed, copied or destroyed without the permission of the copyright owner.
+
+Other material accessible from the LMS or via the Library, such as ebooks and journal articles, are made available to you under licensing agreements that allow you to access them for personal educational use, but not to share with others.
+ 
+**Can I share my login details?**
+
+No! Pheme is your key to accessing a number of UWA's online services, including LMS, studentConnect, UWA email, your Library account, and Unifi. These services hold copyright material as well as your personal information, including your unit marks, enrolment information and contact details, so it is important that you do not share the access credentials with anyone else.
+
+https://www.student.uwa.edu.au/learning/resources/ace/respect-intellectual-property/copyright-and-uwa-unit-content
+
+**Also it ensures that random sampling is reproducible. You need to re-run this block every time you restart the lab sheet!!!**
+
+```{r}
+## You MUST run this code (every time you open the lab sheet).
+aux <- version
+if (((as.numeric(aux$major) >= 3) && (as.numeric(aux$minor) >= 6)) || (as.numeric(aux$major) >= 4)) {
+  RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rounding")
+} else {
+  RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion")
+}
+
+set.seed(12345)
+cat("1st check: 5 = ",sample(1:6,1),"\n",sep="")
+cat("2nd check: 9 = ",ceiling(runif(1,0,10)),"\n",sep="")
+cat("If the statements above are right, then it is ok.\n",sep="")
+cat("\n",sep="")
+cat("If you get a warning message as below, this is ok. \n   'Warning message in RNGkind(kind = ",'"',"Mersenne-Twister",'"',
+    ", normal.kind = ",'"',"Inversion",'"',", :\n",'   "',"non-uniform 'Rounding' sampler used",'"',"\n",sep="")
+
+options(repr.plot.width=4, repr.plot.height=4, repr.plot.res = 120)
+```
+
+
+
+## Question 1 Continuous Random Variables: Uniform
+
+In the lecture you have also learned about continuous random variables. We will now learn how to use R to visualise the density function and calculate probabilities as well as quantiles for specific continuous distributions.
+
+First, find the help about Uniform distribution.
+
+### 1.1 dunif() function
+
+```{r eval=FALSE, include=FALSE}
+?dunif
+```
+
+
+For instance, in lecture you already came across the following density function, which looks uniform.
+
+```{r}
+curve(dunif(x, min = 0, max = 5, log = FALSE), xlim = c(-0.5, 5.5), ylab="f(x)")
+```
+
+### 1.2 punif() function to calculate the probabilities
+
+```{r eval=FALSE, include=FALSE}
+?punif
+```
+
+Now, let $X$ be a random variable that belongs to this continuous density function. We can use the `punif()` function in R to calculate probabilities. The `punif()` function has 3 arguments that we need to specify. The first one is the quantile; the second the lower bound and the third the upper bound of the sample space. We may choose to use a fourth argument to specify whether we would like R to calculate the area (and therefore the probability) to the left of the first argument or to the right. By default the area to the left is calculated which matches the definition of a quantile.
+
+
+```{r}
+punif(1.5, min = 0, max = 5)
+1- punif(1.5, min=0, max=5, lower.tail=FALSE)
+```
+
+
+```{r}
+x <- punif(1.5, min = 0, max = 5, lower.tail = TRUE)
+cat("P(X<1.5)=",x)
+```
+
+Think about the use of the different arguments in `punif()`, try them out if you like or read up on them via `?punif`.
+
+### 1.3 qunif() function to calculate the quantiles
+
+We can also use a similar command called `qunif()`, to calculate the quantiles of this distribution. If you want to refresh your memory on this topic you can go back to week 4 and read the "Quantile"-section of the lab sheet. The arguments of the `qunif()` function are very similar to the ones from the `punif()` function. Mainly the quantile is now being exchanged with a probability. For instance, we can find the 40\% quantile of the above distribution via:
+
+```{r}
+qunif(0.4, min = 0, max = 5)
+```
+```{r}
+punif(3,min = 0,max = 5) - punif(2,min = 0,max = 5)
+punif(2,min = 0,max = 5,lower.tail = F)
+punif(0.5,min = 0,max = 5)
+qunif(0.75,min = 0,max = 5,lower.tail = F)
+```
+
+
+It is possible to specify a fourth argument similar to what we have seen above, but we would recommend against it at this stage.
+
+Use the methods learned above to calculate probabilities and find quantiles, such as:
+
+      1. P(2<X<3)
+      2. P(X>2)
+      3. P(X<0.5)
+      4. What is the upper quantile of X?
+
+Now, use the cell block below to help you answer the questions.
+```{r}
+punif(3,min = 0, max = 5)-punif(2,min = 0, max = 5)
+```
+```{r}
+punif(2,min = 0, max = 5,lower.tail = FALSE)
+punif(0.5,min = 0, max = 5)
+qunif(0.75,min = 0, max = 5,lower.tail = FALSE)
+```
+
+
+
+```{r}
+punif(0,min = -5,max = 5)
+punif(2.5,min = -5,max = 5) - punif(-2.5,min = -5,max = 5)
+punif(3,min = -5,max = 5) - punif(-2,min = -5,max = 5)
+```
+
+### 1.4 An example: Reaction temperature
+
+Suppose the reaction temperature X (in Celsius) in a chemical process has a uniform distribution with min=-5 and max=5.
+
+(a) Plot the probability distribution function (pdf).
+
+```{r}
+curve(dunif(x, min = -5, max = 5, log = FALSE), xlim = c(-5.5, 5.5), ylab="f(x)", col=3)
+```
+
+(b) Compute P(X < 0).
+```{r}
+punif(0, min = -5, max = 5)
+```
+(c) Compute P(-2.5 < X < 2.5).
+```{r}
+punif(2.5, min = -5, max = 5)-punif(-2.5, min = -5, max = 5)
+```
+(d) Compute $P(-2 \le X \le 3)$.
+```{r}
+punif(3, min = -5, max = 5)-punif(-2, min = -5, max = 5)
+```
+
+## Question 2 Sampling from a *Uniform Distribution* using runif()
+
+Just like we did with discrete distributions before, we can also sample from continuous distributions, say the one we just viewed in the previous exercise. We don't even need the `sample()` command for this but instead use the R internal `runif()` command, which generates realisations of a random variable with continuous uniform density. 
+
+To illustrate this, run the below lines of code. Note that similarly to last week's lab re-running the code will result in different observations since a new realisation is generated each time you run it.
+
+```{r}
+runif(1, min = 0, max = 5)
+```
+
+To make results reproducible, we can once again, use the `set.seed()` command. Re-run the block of code below to verify this. 
+
+```{r}
+# use this block to answer the questions.
+set.seed(1400)
+runif(1,min = 0, max=10)
+```
+
+Let us now simulate how quickly the corresponding histogram will match the theoretical density once we increase the sample size. Run the block of code below for plot re-sizing purposes first.
+
+```{r}
+options(repr.plot.width=5, repr.plot.height=5, repr.plot.res = 120)  # resizing plot
+```
+
+Now study the block of code below. What would you expect it to do? Now run it and check whether the output matches your expectation.
+
+```{r}
+## First we generate Uniform. What are the min, max? How many?
+uniform_10 = runif(10,min=0,max=5)
+uniform_100 = runif(100,0,5)
+uniform_1000 = runif(1000,0,5)
+uniform_10000 = runif(10000,0,5)
+
+par(mfrow=c(2,2))
+hist(uniform_10,breaks=(0:50)/10,freq=FALSE,col=1)
+hist(uniform_100,breaks=(0:50)/10,freq=FALSE,col=2)
+hist(uniform_1000,breaks=(0:50)/10,freq=FALSE,col=3)
+hist(uniform_10000,breaks=(0:50)/10,freq=FALSE,col=4)
+```
+
+## Question 3 Sampling from an *Exponential Distribution*
+
+First, find the help about Exponential distribution.
+
+### dexp() function
+
+```{r eval=FALSE, include=FALSE}
+?dexp
+```
+
+
+Recall from lecture that one of the most commonly used continuous density functions looks like this:
+
+```{r}
+options(repr.plot.width=4, repr.plot.height=4, repr.plot.res = 120)  # resizing plot
+curve (dexp (x, rate = 1), xlim = c(0,4), ylab="f(x)")
+```
+
+The analytical form of this density function is: $f(x) = \lambda e^{-\lambda  x}, x>0$, where $\lambda$ is referred to as the rate ($\lambda = 1 $ in the graph above). Note how different values for the 'rate' argument change the appearance of the function. In essence, starting at (0,$\lambda)$ the line converges to zero. The higher the rate the faster it converges.
+
+```{r}
+curve(dexp(x, rate = 0.5), xlim = c(0,2.5),ylim = c(0,5), col ="red ",ylab="f(x)")
+curve(dexp(x, rate = 1), xlim = c(0,4),ylab="f(x)", add=T)
+curve(dexp(x, rate = 3), xlim = c(0,4), col ="blue ",ylab="f(x)",add=T)
+curve(dexp(x, rate = 5), xlim = c(0,4),col ="green ",ylab="f(x)",add=T)
+```
+
+### Exercise 3.1: Exponential pexp or qexp
+
+Let X be a random variable following an exponential density with $\lambda = 0.25$. Transfer the methods learned based on the uniform density to now calculate probabilities and find quantiles for the exponential density. Use `pexp()` and `qexp()` to find quantities like:
+```{r}
+pexp(3,rate = 0.25) - pexp(1,rate = 0.25)
+pexp(2,rate = 0.25,lower.tail = F)
+pexp(0.5,rate = 0.25)
+qexp(0.75,rate = 0.25)
+```
+
+
+
+
+
+1. P(1<X<3)
+```{r}
+pexp(3, rate = 0.25, lower.tail = TRUE)-pexp(1, rate = 0.25, lower.tail = TRUE)
+```
+
+2. P(X>2)
+```{r}
+pexp(3, rate = 0.25, lower.tail = FALSE)
+```
+
+
+3. P(X<0.5)
+```{r}
+pexp(0.5, rate = 0.25)
+```
+
+4. What is the upper quantile of X?
+```{r}
+qexp(0.75, rate=0.25)
+```
+Use the cell block below to perform further necessary calculations in R for the questions. Use the R help page via `?pexp` and `?qexp` to find out which arguments these functions use.
+
+```{r eval=FALSE, include=FALSE}
+# space for your calculations
+# Make sure you remove eval=FALSE, include=FALSE
+# to see the results
+```
+```{r}
+?rexp
+```
+### Exercise 3.2: rexp
+
+We can also use `?rexp` to sample from this distribution.
+
+```{r}
+hist(rexp(1000, rate = 0.5))
+```
+
+Once again, notice how this generated realisation changes when you re-run the code. To avoid this, we set the random counter, making results reproducible. 
+
+```{r}
+# use this block of code to simulate 1000 reproducible draws from an exponential density.
+# Make sure you remove eval=FALSE, include=FALSE
+# to see the results
+set.seed(1400)
+re <-rexp(1000,rate = 0.5)
+hist(re)
+```
+
+Now, try to visualise how the histogram converges to the true density for large sample sizes.
+
+```{r eval=FALSE, include=FALSE}
+# has to be completed
+# Make sure you remove eval=FALSE, include=FALSE
+# to see the results
+
+exp_10 = rexp(10, rate=1)
+exp_100 = rexp(100, rate = 1)
+exp_1000 = rexp(1000, rate=1)
+
+par(mfrow=c(2,2))
+hist(exp_10,freq=FALSE,col=2)
+hist(exp_100,freq=FALSE,col=3)
+hist(exp_1000,freq=FALSE,col=4)
+curve (dexp (x, rate = 1), xlim = c(0,10))
+```
+
+```{r}
+pnorm(50,70,10)
+```
+
+
+
+## Question 4 Sample Mean
+
+Before you start with this exercise, please review the lecture material regarding the sample mean.
+
+Consider $n$ **independent** random variables $X_1, X_2,..., X_n$, which all follow a continuous uniform distribution like we have already seen it in *Exercise 2* of this lab sheet.
+
+The sample mean $\bar{X}$ is indeed a random variable itself, as it is the scaled (by $1/n$) sum of $n$ random variables $X_1, X_2,..., X_n$, so it's value depends on the outcome of $n$ random experiments.
+
+If a random variable has uniform density between $a$ and $b$, then its expectation is $(a+b)/2$ and its variance is $(a-b)^2/12$. If a random variable has an exponential density with rate $\lambda$, then its expectation is $1/\lambda$ and its variance is $1/\lambda^2$. 
+
+If we now consider $n$ such random variables in both of the above cases:
+
+    - What is the expectation of the sample mean?
+    (a+b)/2
+    (a+b)/lamba
+    - What is the variance of the sample mean?
+    (a-b)^2/12*n
+    1/lambda^2*n
+    - How do E(X) and Var(X) change based on the sample size n?
+    E(x)doesnt change Var(x) /n
+    
+Recall from lecture that the following code can be used to visually compare the original empirical distribution (with $n=100$ draws) of a uniform distribution between 0 and 5 and the sampling distribution (so the distribution of the sample mean). In order to derive an empirical distribution for the sample mean we need to draw multiple samples (here $m=1000$ samples, each of size $n=100$), for each of which we then calculate the mean.
+
+Don't worry about the details of the code too much, but take a look at the two corresponding histograms.
+
+```{r}
+# sampling from a uniform distribution between 0 and 5, 100 times.
+n = 100
+original = runif(n,min=0,max=5)
+
+# sampling from a uniform distribution between 0 and 5, 100 times. Repeating this procedure 1000 times.
+n = 100
+m = 1000
+sample_means = c()
+for (i in 1:m) {
+  sample_means[i] = sum(runif(n,0,5))/n
+}
+
+# plotting both empirical distributions.
+par(mfrow=c(1,2))
+hist(original,breaks=(0:50)/10,freq=F,col=2, main="original sample", xlim = c(0,5))
+hist(sample_means,breaks=(0:250)/50,freq=TRUE,col=2, main="sample mean", xlim = c(1.9, 3.1))
+```
+
+     -  What do you notice about the two distributions? 
+     sample means can be more symmertic
+  
+     -  Does the shape of the histogram of the sampling distribution remind you of a familiar continuous distribution?
+    normal distribution
+### Exercise 4.1: Sampling from Exponential
+
+Using the knowledge gained throughout this lab, repeat the procedure for an exponential distribution with rate $\lambda=0.25$. 
+
+That is: 
+
+      - Sample 100 times from this distribution and plot the corresponding histogram. 
+      - Then repeat this process 1000 times, i.e. calculate the mean of 1000 different samples which each have a sample size of 100. 
+      - Lastly, plot the histogram of those means.
+```{r}
+set.seed(1400)
+n = 100
+m = 1000
+original = rexp(n,rate = 5)
+set.seed(1400)
+samplemean = c()
+for (i in 1:m) {
+  samplemean[i] = sum(rexp(n,rate = 5))/n # each mean for each sample
+}
+mean(original)
+var(original)
+mean(samplemean)
+var(samplemean)
+```
+
+```{r}
+# complete this code to plot the two histograms.
+# Make sure you remove eval=FALSE, include=FALSE
+
+set.seed(1400)
+
+n = 100
+original = rexp(n,0.25)
+
+n=100
+m=1000
+sample_means = c()
+for (i in 1:m) {
+  sample_means[i] = sum(rexp(n,0.25))/n
+}
+
+par(mfrow=c(1,2))
+hist(original,freq=TRUE,col=2, main="original sample")
+hist(sample_means,freq=TRUE,col=2, main="sample mean")
+```
+```{r}
+set.seed(1400)
+
+n = 100
+original = rexp(n,3.5)
+
+n=100
+m=500
+sample_means = c()
+for (i in 1:m) {
+  sample_means[i] = sum(rexp(n,0.25))/n
+}
+```
+```{r}
+set.seed(1400)  # Setting a seed for reproducibility
+lambda <- 3.5
+n <- 100
+reps <- 500
+
+# Generating 500 samples, each of size 100
+sample_means <- replicate(reps, mean(rexp(n, rate = lambda)))
+
+# Calculating the sample mean and variance of the sample means
+sample_mean_of_sampling_distribution <- mean(sample_means)
+sample_variance_of_sampling_distribution <- var(sample_means)
+```
+
+
+
+
+    - What do you notice this time? 
+     
+     - What does the shape of the sampling distribution remind you of this time? 
+
+### Exercise 4.2 Sampling from data
+
+Let us now also consider an empirical distribution based on observed flight delays and repeat the process from above.
+
+First, import the flight data from last week's lab. As a reminder, it contains information on a total of 13825 United Airlines domestic flights departing from San Francisco in the summer of 2015. Focus on the delays and consider the data to be our population, i.e. all domestic flights from San Fransisco in the summer of 2015.
+
+```{r}
+united <- read.csv("weather.csv")
+head(united)
+```
+
+Let's visualise the distribution of the population first.
+
+```{r}
+hist(united$Delay,freq=TRUE,col=2, main="original sample", breaks=50)
+```
+
+Repeat the procedure for the population of 13825 delays. That is: Sample 100 times from the population. Then calculate the mean of 1000 different samples which each have a sample size of 100 and plot the histogram of those means.
+
+```{r}
+set.seed(1400)
+orginal = united$Delay
+sam_mean = c()
+for (i in 1:1000) {
+  sam_mean[i] = sum(sample(orginal,100))/n
+}
+hist(sam_mean)
+```
+```{r}
+set.seed(1400)    
+original = united$Delay
+sam_means = c()
+for (i in 1:1000) {
+  sam_means[i] = sum(sample(original,size=100))/n
+}
+hist(sam_means)
+```
+- What do you notice this time? 
+    skewed to right
+     - What does the shape of the sampling distribution remind you of this time? 
+     skewed to right The Exponential Distribution 
+     - Can you think of  a rule that would generalise your findings regarding the sampling distribution no matter the original distribution?
+
+## Question 5 Conditional Probability - Tree diagram
+
+First, revisit the Monty Hall Problem from the lecture, for which it was statistically smarter to change doors upon being
+presented with one empty door. Revealing that one of the doors is empty changes our initial knowledge of the situation 
+and hence poses a condition.
+
+Conditional probabilities are often needed for medical testing. To illustrate this consider the following example.
+The state of Victoria has a total population of roughly 8.166 Million people. So far there have been 17,173 confirmed cases of Covid19. Hence, the probability for a citizen of Victoria to be or have been infected with CoVid19 is $P(C) = 17,173/8,166,000 \approx 0.002$, where $C$ stands for the event of a citizen having the virus. 
+
+Let's now assume that we have a fictitious medical test that correctly identifies people with Covid19 in 95% of all times, i.e. the test is positive if the patient has Covid19. We will denote $+$ as the event of a positive test result. Then $P(+|C)=0.95$. 
+
+The test furthermore correctly identifies people without Covid19 in 90% of all times, i.e. the test is negative if the patient doesn't have Covid19, therefore $P(-|C^c)= 0.9$, where $-$ represents the event of a negative test result.
+
+Note: $P(A|B$) states the conditional probability of $A$ given $B$ and $A^c$ states the complement of $A$.
+
+The following tree diagram illustrates the situation.
+
+
+
+                         / \
+                        /   \
+          P(C)= 0.002  /     \  ?0.998
+                      /       \
+                  Covid      no Covid ($C^c$)
+                   / \   0.05      / \
+     P(+|C)=0.95  /   \ ?   ?     /   \ P(-| $C^c$)=0.9
+                 /     \         /0.1     \
+                +       -       +       -
+        0.0019   0.0001     0.0998.     0.8982
+
+First of all, be reminded that the probabilities above are entirely fictitious.
+
+Now use the multiplication and addition rule from lecture 6 as well as the conditional probability rule stated below to calculate the following probabilities:
+
+1. $P(C^c)$ 0.998
+2. $P(-)$ 0.8983
+3. $P(C|+)$ 0.0187
+4. $P(C|-)$ 0.0001
+
+Note: For the situation above, conditional probabilities can be calculated as follows: 
+
+$$P(A|B)= \frac{P(B|A)\,P(A)}{P(B)} =\frac{P(B|A)\,P(A)}{P(B \cap A) +P(B \cap A^c)} = \frac{P(B|A)\,P(A)}{P(B|A)\,P(A) + P(B|A^c)\,P(A^c)}$$
+
+
+## Question 6 Calculating Normal probabilities (Repeat from Lab 5)
+
+The normal distribution is very useful in modelling many different real world situations. The basic characteristics of the distribution are the same in each case - only the mean and standard deviation differ.
+
+### 6.1. The diameters of a mechanical component produced on a certain production line are known from experience to have a normal distribution with mean 97.5mm and standard deviation 4.4mm.
+
+1. Find the proportion of components with diameter less than 90mm.
+```{r}
+pnorm(90,97.5,4.4)
+```
+
+2. Find the proportion of components with diameter between 95 and 105mm.
+```{r}
+pnorm(105,97.5,4.4)-pnorm(95,97.5,4.4)
+```
+
+
+3. Find the proportion of components with diameter greater than 110mm.
+```{r}
+1-pnorm(110,97.5,4.4)
+```
+### 6.2 The body mass index is a commonly used measure of body fat for humans calculated using
+
+$$BMI=\frac{mass(kg)}{(height(m))^2} $$
+
+Assuming that the BMI of boys aged 10 years old is approximately normally distributed with a  mean of 16.5 kg/m² and standard deviation of 1.5 kg/m².
+
+(a) Find the probability that a 10 year old boy has a BMI of more than 13.5 kg/m².
+```{r}
+1- pnorm(13.5,16.5,1.5)
+```
+
+(b) What BMI would a 10 year old boy need to be counted in the most obese 10%?
+```{r}
+qnorm(0.9,16.5,1.5)
+```
+
+(c) Find the probability that a 10 year old boy’s BMI lies between 14.625 kg/m² and 19.125 kg/m².
+
+```{r}
+pnorm(19.125,16.5,1.5)-pnorm(14.625,16.5,1.5)
+```
+```{r}
+
+
+# Initialize variables
+product = 1
+i = 5
+count = 0
+
+# Loop until the product exceeds 12345
+     product <= 12345:
+    product *=math.sqrt(math.log(i + 3))
+    i +== 1
+    count +=1  # Increment count for each product computation
+
+# Output the number of products computed
+print("Number of products needed:", count)
+```
+
+```{r}
+# Initialize variables
+product <- 1
+i <- 5
+count <- 0
+
+# Loop until the product exceeds 12345
+while (product <= 12345) {
+  product <- product * sqrt(log(i + 3))
+  i <- i + 1
+  count <- count + 1
+}
+
+# Print the number of products needed
+print(paste("Number of products needed:", count))
+```
+```{r}
+library(ISLR2) 
+attach(College)
+
+head(College) # to view the first 6 rows
+```
+```{r}
+# Assuming the 'College' data frame is already loaded
+
+# Step 1: Initialize the 'Enrolled' column to 0 for all entries
+College$Enrolled = rep(0, nrow(College))
+
+# Step 2: Loop through each college entry
+for (i in 1:nrow(College)) {
+    if (College$Enroll[i] > 2000) {  # Step 3: Check if 'Enroll' is greater than 2000
+        College$Enrolled[i] = 1
+    } else {
+        College$Enrolled[i] = 0
+    }
+}
+
+# Calculate the number of colleges with 'Enroll' greater than 2000
+sum(College$Enrolled)
+```
+```{r}
+# Set the seed for reproducibility
+set.seed(1400)
+
+# Generate samples for the unfair die (d1) and the fair die (d2)
+d1 <- sample(1:6, size=10000, replace=TRUE, prob=c(0.05, 0.1, 0.3, 0.3, 0.2, 0.05))
+d2 <- sample(1:6, size=10000, replace=TRUE)
+
+# Compute the sum X of the two dice rolls
+X <- d1 + d2
+
+# Calculate the sample variance of X
+sample_variance <- var(X)
+
+# Calculate the relative frequency of observations where X is less than or equal to 3
+relative_frequency <- sum(X <= 3) / length(X)
+
+# Print results
+print(paste("Sample Variance of X:", sample_variance))
+print(paste("Relative Frequency of X <= 3:", relative_frequency))
+```
+```{r}
+set.seed(1400)  # Setting a seed for reproducibility
+
+# Number of simulations
+n <- 10000
+
+# Simulating 10,000 games for Team A and Team B
+team_A_wins <- runif(n) < 0.75  # Team A wins if the random number is less than 0.75
+team_B_loses <- runif(n) > 0.85  # Team B loses if the random number is greater than 0.85
+
+# Calculate the probability of either Team A winning or Team B losing
+result <- team_A_wins | team_B_loses  # Logical OR operation
+probability_A_wins_or_B_loses <- mean(result)  # Proportion of true values
+
+# Print the result
+print(paste("Probability that Team A wins or Team B loses:", probability_A_wins_or_B_loses))
+```
+```{r}
+library(ggplot2)
+data(diamonds)
+
+# Calculate the population mean of price
+population_mean <- mean(diamonds$price)
+set.seed(1400)
+
+# Number of samples and sample size
+n_samples <- 1000
+sample_size <- 50
+
+# Simulate sampling distribution of the sample means
+sample_means <- replicate(n_samples, {
+    sample_data <- sample(diamonds$price, sample_size, replace = TRUE)
+    mean(sample_data)
+})
+
+# Mean of the sampling distribution
+sampling_distribution_mean <- mean(sample_means)
+
+# Standard deviation of the sampling distribution
+sampling_distribution_sd <- sd(sample_means)
+# Drawing a histogram of the price data
+hist(diamonds$price, main = "Histogram of Diamond Prices",
+     xlab = "Price ($)", col = "blue", breaks = 50)
+
+```
+
+```{r}
+sampling_distribution_mean <- mean(sample_means)
+sd(sampling_distribution_mean)
+```
+
+
+
+

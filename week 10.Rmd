@@ -1,0 +1,420 @@
+---
+title: "STAT1400 Statistics for Science"
+subtitle: "Computer Lab Week 10"
+output:
+  html_document: 
+    toc: true
+  html_notebook: default
+  pdf_document: 
+    toc: true
+    number_sections: yes
+  word_document: 
+    toc: true
+# date: '`r format(Sys.time(), "%d %B %Y, %H:%M ")`'
+---
+
+```{r}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	error = FALSE,
+	message = FALSE,
+	comment = NA,
+	prompt = FALSE,
+	tidy = TRUE
+)
+```
+
+
+# Learning Check
+
+In this lab you should read through and run the code in the lab sheet and complete the lab assessment. 
+
+By the end of this lab you should be able to use R to:
+
+1. perform bootstrapping manually by writing R code;
+
+2. perform bootstrapping manually for different statistics;
+
+3. construct confidence intervals for different population parameters using bootstrapping.
+
+
+# Copyright and UWA unit content
+
+**Is it OK to download and share course material such as lectures, unit outlines, exam papers, articles and ebooks?**
+
+UWA is committed to providing easy access to learning material and many of your lectures are available for online access via the Lecture Capture System (LCS), accessible through the LMS. Your unit coordinator may make their lecture recordings available to download if they wish. You are allowed to access recorded lectures in the format they are supplied on the LCS – so if they are not made available to download, you must not use any software or devices to attempt to download them.
+
+All recorded lectures and other course material, such as presentation slides, lecture and tutorial handouts, unit outlines and exam papers, are protected under the Copyright Act and remain the property of the University. You are not allowed to share these materials outside of the LMS – for example, by uploading them to study resource file sharing websites or emailing them to friends at other universities. Distributing course material outside of the LMS is a breach of the University Policy on Academic Conduct and students found to be sharing material on these sites will be penalised. University data, emails and software are also protected by copyright and should not be accessed, copied or destroyed without the permission of the copyright owner.
+
+Other material accessible from the LMS or via the Library, such as ebooks and journal articles, are made available to you under licensing agreements that allow you to access them for personal educational use, but not to share with others.
+ 
+**Can I share my login details?**
+
+No! Pheme is your key to accessing a number of UWA's online services, including LMS, studentConnect, UWA email, your Library account, and Unifi. These services hold copyright material as well as your personal information, including your unit marks, enrolment information and contact details, so it is important that you do not share the access credentials with anyone else.
+
+https://www.student.uwa.edu.au/learning/resources/ace/respect-intellectual-property/copyright-and-uwa-unit-content
+
+
+Please run the following line of code for the purpose of better graph quality.
+
+```{r}
+#Optional
+#options(repr.plot.width=4, repr.plot.height=4, repr.plot.res = 120)
+```
+
+**Also run the next block of code please. It ensures that random sampling is reproducible. You need to re-run this block every time you restart the lab sheet!!!**
+
+```{r}
+## You MUST run this code (every time you open the lab sheet).
+aux <- version
+if (((as.numeric(aux$major) >= 3) && (as.numeric(aux$minor) >= 6)) || (as.numeric(aux$major) >= 4)) {
+  RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rounding")
+} else {
+  RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion")
+}
+
+set.seed(12345)
+cat("1st check: 5 = ",sample(1:6,1),"\n",sep="")
+cat("2nd check: 9 = ",ceiling(runif(1,0,10)),"\n",sep="")
+cat("If the statements above are right, then it is ok.\n",sep="")
+cat("\n",sep="")
+cat("If you get a warning message as below, this is ok. \n   'Warning message in RNGkind(kind = ",'"',"Mersenne-Twister",'"',
+    ", normal.kind = ",'"',"Inversion",'"',", :\n",'   "',"non-uniform 'Rounding' sampler used",'"',"\n",sep="")
+```
+
+# Bootstrap: An overview 
+
+We finished off last week's lab sheet by calculating point estimates for true population parameters. When we calculate such estimates we use our data and calculate the estimate exactly once. The estimate can vary depending on the actual sample that was drawn and it would therefore be better to draw not one, but a couple of samples, for each of which we could then calculate the desired point estimate. This would allow us to get an idea about how much those estimates can vary and what the corresponding frequency distribution looks like. 
+
+As explained in the lecture however, often we don't have the resources to draw multiple samples but only one. Fortunately a method called "bootstrap" can help us out. When bootstrapping, we start of by drawing one "original sample" from the population. Assuming that the original sample is sufficiently representative of the entire population we then go on and re-sample multiple times from that original sample to simulate additional draws from the population. Those replicated samples are of the same size as the original sample and must hence be drawn with replacement as we would just end up with the exact same sample over and over again otherwise.
+
+To deepen your understanding of bootstrapping, study the related theory presented to you in lecture. 
+
+Here is a quick overview of the procedure:
+
+   - When bootstrapping, treat the **original sample** as if it was the population.
+
+   - Then, draw from the original sample, at random **with replacement**. This process is called **resampling**. 
+
+   - A re-sampled sample is called a **replication**.
+
+   - It is important that every replication has exactly as many observations as the original sample.
+
+   - Now calculate the desired estimate based on the first replication.
+
+   - Repeat this process many times (e. g. 1,000 or 10,000 times) to approximate the distribution of the desired estimator.
+
+
+
+## Question 1: Bootstrap & Distribution of the Sample Mean
+
+Bootstrapping is very similar to the re-sampling methods we have already applied throughout the last two labs. In these labs, we either re-sampled from a theoretical distribution or assumed that our dataset represented the entire population. Re-sampling from the population is not possible when we analyse data however, since the data we have available will only represent a small proportion of the population. **This highlights the usefulness of bootstrapping, as it re-samples from one original sample instead.**
+
+In this exercise we will perform bootstrapping to get 1,000 replications and ultimately an empirical frequency distribution of the mean delay of United Airlines flights in the summer of 2015. First, read in the corresponding file and recall the below code on how to obtain an "original sample" called `our_sample`of size 250 from last week. As a reference, you should get $16.036$ as a point estimate for the true mean.
+
+```{r}
+united <- read.csv("summer.csv")
+head(united)
+
+set.seed(1400)# DO NOT delete this line!!!
+
+# choosing a sample of size 250 from the above dataframe and calling it "our_sample". 
+# ATTENTION: At this point we are sampling rows of the dataframe, not values yet.
+our_sample = united[sample(nrow(united), size = 250, replace = F), ]
+
+# calculating the sample mean of 'Delay' in "our_sample" as a point estimate for the population mean.
+mean(our_sample$Delay)
+```
+
+This estimate depends on the sample we draw. If you set the random counter to a different number than 1400, you will most likely get a different sample mean. To get an idea of how much our estimate can vary, we will now perform a bootstrap to create 1,000 replications from the "original sample". Familiarise yourself with the code below and fill in the blanks.
+
+```{r}
+# THIS CODE BLOCK WILL HAVE TO BE MANIPULATED BY YOU TO WORK!
+# To do so, replace all "...j..." sections with the correct code for j=1,2,3,4,5,6.
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+
+set.seed(1400)  
+repetitions = 1000
+bootstrap_mean = function(x,repetitions)# DO NOT change or delete this line
+boot_means <- numeric(repetitions)
+boot_means <- c()
+
+for(i in 1 : repetitions)
+     { 
+       boot_sample = sample(x, size = length(x) , replace = T)
+       boot_means[i] = mean(boot_sample)
+     }
+
+head(boot_means)
+hist(boot_means)
+```
+```{r}
+
+set.seed(1400)
+repetitions = 1000
+
+bootstrap_mean = function(x, repetitions) {
+    boot_means <- numeric(repetitions)
+    for(i in 1:repetitions) {
+        boot_sample <- sample(x, size = length(x), replace = TRUE)
+        boot_means[i] <- mean(boot_sample)
+    }
+    return(boot_means)
+}
+
+x <- rnorm(250)  # example
+result_means <- bootstrap_mean(x, repetitions)
+
+head(result_means)
+hist(result_means)
+```
+
+
+
+
+
+
+
+
+
+
+The last line of the above code generates a histogram of the empirical distribution of the re-sampled means. It is a neat visualisation of the 1,000 bootstrapped sample means. We will come back to this distribution in the second part of this lab sheet.
+
+## Question 2: Bootstrap & Distribution of the Sample Standard Deviation
+
+We will now perform another bootstrap using the following datafile, which contains information on pregnancies.
+
+```{r}
+pregnancy =  read.csv("pregnant.csv", header = TRUE) 
+head(pregnancy)
+nrow(pregnancy)
+```
+
+We will concern ourselves with the age of the mother (i. e. the 'Maternal.Age' variable). Repeat the bootstrap procedure from above to approximate the distribution of the sample standard deviation. Hence, draw one "original sample" of size 250 from the dataframe which you will then treat as the population and therefore re-sample from it. 
+
+The last two lines of the below code also generate a point estimate (5.972) for the population standard deviation based on the original sample. 
+
+```{r}
+set.seed(1400)           # DO NOT change this line 
+
+original_sample = pregnancy[sample(nrow(pregnancy), size = 250, replace = F), ]     #generates the "original sample"
+
+point_est_sd <- sd(original_sample$Maternal.Age)     # serves as our initial point estimate.
+
+point_est_sd
+```
+
+Now, repeat the actual bootstrap by creating 1,000 replications from the original sample and use those to find and visualise an empirical distribution of the sample standard deviation of the mother's ages. 
+
+Attention: The code template below works similarly to the bootstrap above. However, there is one small alteration. 
+We will create a function called "bootstrap_sd", which will store the standard deviations of **any number of replications** (this will be the argument of the function) in a vector and returns that vector.
+
+```{r eval=FALSE, include=FALSE}
+# THIS CODE BLOCK WILL HAVE TO BE MANIPULATED BY YOU TO WORK!
+# To do so, replace all "...j..." sections with legit code for j=1,2,3,4,5,6.
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+
+
+# the function has one argument: The amount of replications, so the amount of resampling we want to perform.
+# the function returns a vector of bootstrapped sample standard deviations.
+
+
+set.seed(1400)
+bootstrap_sd = function(replications)
+{ 
+  boot_sd = c()
+  for(i in 1 : replications)
+     { 
+       bootstrap_sample = original_sample[...1...(nrow(original_sample), size = 250, replace = ...2...), ]
+       boot_sd[i] = sd(bootstrap_sample$...3...)
+     }
+  return(...4...)    
+}
+
+
+sd.maternal.age <- ...5...(1000)
+summary(sd.maternal.age)
+
+
+hist(...6..., xlab = "Bootstrap Sample Standard Deviation", ylab = "Density", main = "", 
+     probability = T, col = "gray")
+
+# red point: "population" standard deviation on the horizontal axis 
+# pch and cex: set points shape and size, respectively
+points(point_est_sd, 0, pch = 16, cex = 1.4, col = "red")
+```
+
+The last section of the code once again creates a histogram of the distribution of the sample standard deviation of "mother's age". The red dot represents the point estimate from the original sample.
+
+# Confidence Intervals: An overview
+
+In the second part of this week's lab, we will concern ourselves with confidence intervals. Please study the following lines of code carefully. They perform bootstrapping to create 1,000 replications of size 100 each. However, this time the defined function 'bootstrap_mean' returns the means of the 'Maternal Age' variable. 
+
+```{r}
+set.seed(123456)           # DO NOT change this line 
+
+original_sample = pregnancy[sample(nrow(pregnancy), size = 100, replace = F), ]     #generates the "original sample"
+
+
+population_mean <- mean(pregnancy$Maternal.Age)
+
+
+bootstrap_mean = function(x)
+{ 
+  boot_mean = c()
+  for(i in 1 : x)
+     { 
+       bootstrap_sample = original_sample[sample(nrow(original_sample), size = 100, replace = T), ]
+       boot_mean[i] = mean(bootstrap_sample$Maternal.Age)
+     }
+  return(boot_mean)    
+}
+
+
+results <- bootstrap_mean(1000)
+
+
+hist(results, xlab = "Bootstrap Sample Mean", ylab = "Density", main = "", 
+     probability = T, col = "gray")
+
+points(population_mean, 0, pch = 16, cex = 1.4, col = "red")
+```
+
+## Question 3: Confidence Intervals for the mean maternal age
+
+If we regard the entire dataset as our population, then the red dot visualises the population mean. The histogram shows how much a point estimate can vary when our initial sample is rather small. This illustrates a common problem of the bootstrap method, which is that we assume our initial sample to be a "good" representation of the population. If this is violated however, our replications will also not represent the population well. This problem can not be solved by simply creating more replications. You can convince yourself of this by increasing the number of replications in the code above and re-run it. Don't forget to reset the number of replications to 1,000 though for the purpose of this exercise.
+
+It is because of this variation that point estimates are often regarded to be rather inapt. A very different concept of estimation arises when an interval is constructed accounting for variability in the estimation. Those intervals are called **confidence intervals**. Please study the lecture material regarding confidence intervals. Then construct a 95% confidence interval for the mean maternal age based on the bootstrap from above. 
+
+```{r}
+interval = c(quantile(results, 0.025),  quantile(results, 0.975))           
+
+
+# Don't change any of the below code!
+hist(results, xlab = "Bootstraped Maternal Age Means", ylab = "Density", main = "", 
+     probability = T, col = "gray")
+
+# red point:  population mean
+points(population_mean,0, pch = 16, cex = 1.4, col = "red")
+
+# Constructing the central 95% interval of resampled means.
+# lwd: Sets thickness of line.
+lines(c(interval[1], interval[2]), c(0,0), pch = 30, lwd = 3, col = "blue")
+```
+
+As you can see, the population mean is just captured by our 95% confidence interval. Think about (or try it out) how that may change if we increase or decrease the confidence level.
+
+## Question 4: Confidence Intervals: Capturing the population mean
+
+Was capturing the population mean just a fluke? To see how frequently the constructed confidence interval contains the mean, we have to repeat the above process. Specifically, we will now repeat it 200 times using another for-loop. Follow these steps to do so:
+
+        - Draw an "original" small sample of size 100 from the entire sample (regarded as the population).
+        
+        - Bootstrap 1,000 times (bootstrapped samples are also of size 100 each) and generate the associated 95% confidence interval.
+
+        - Repeat both steps 200 times by using another for-loop outside of the first one (called a nested for-loop).
+
+This is making things a bit more complicated, but if you remember everything you have already learned, you will be fine! 
+
+Eventually, we will end up with 200 intervals, and count how many of them contain the population mean.
+
+Fill in the blanks in the following lines of code to achieve what is described above now.
+
+**Note**: The code chunk below might take several minutes to compile due to the two nested for-loops.
+
+```{r eval=FALSE, include=FALSE}
+# THIS CODE BLOCK WILL HAVE TO BE MANIPULATED BY YOU TO WORK!
+# To do so, replace all "...j..." sections with the correct code for j=1,2,3,4,5,6.
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+
+# This code is a very big simulation and will therefore TAKE SEVERAL MINUTES to run, don't panic!
+
+# First, we create a matrix with 200 rows and 2 columns. 
+# This matrix will later on contain the lower and upper limits of our 200 simulated confidence intervals. 
+intervals = matrix(nrow= 200, ncol = 2)
+
+# setting the random counter.
+set.seed (123456)
+
+# initiating a for loop to generate the 200 confidence intervals.
+for(i in ...1...){
+    
+    # draw an "original" sample from the datafile
+    original_sample = pregnancy[sample(nrow(pregnancy), size = 100, replace = F),]
+   
+    # bootstrap 1,000 times from that original sample and calculate the mean each time. 
+    bootstrap_mean = c()
+    for(k in 1:1000)
+    { 
+        bootstrap_sample = original_sample[sample(100, size = 100, replace = T), ]
+        bootstrap_mean[...2...] = mean(bootstrap_sample$Maternal.Age)
+    }
+   
+   # getting the 2.5% and 97.5% quantiles of the bootstrapped means and placing them in our matrix.
+   intervals[...3...,1] = quantile(...4..., 0.025)
+   intervals[...3...,2] = quantile(...4..., 0.975)
+}
+```
+
+We have now saved 200 confidence intervals in a matrix called "intervals". Let's take a look at the first 20 of those intervals and compare them to the population mean. As you can see, all confidence intervals (of the first 20) contain the true mean.
+
+```{r eval=FALSE, include=FALSE}
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+head(intervals,20)
+population_mean
+```
+
+How many of the 200 intervals exactly contain the population parameter? To find out, we run the following lines of code:
+
+```{r eval=FALSE, include=FALSE}
+# setting a counter variable initiated at 0.
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+m = 0       
+
+# counting the intervals containing the population mean.
+for(i in 1:200)
+    {
+     if ((population_mean >= intervals[i,1]) & (population_mean <= intervals[i,2]) ) 
+         m =  m + 1
+    }
+
+# return the final value of the counter variable.
+m
+```
+
+```{r eval=FALSE, include=FALSE}
+# Alternatively, the following code does the same:
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+sum((population_mean >= intervals[,1]) & (population_mean <= intervals[,2]))
+```
+
+Is the result surprising? Think about the result as a proportion of all constructed confidence intervals.
+
+## Question 5: Confidence Intervals for the standard deviation of maternal age
+
+Repeat this process for the standard deviation of 'Maternal.Age' now, i. e. write code which will:
+
+- Draw an "original" small sample of size 100 from the entire sample (regarded as the population).
+
+- Bootstrap 1,000 times (bootstrapped samples are also of size 100 each) and generate the associated 95% confidence interval **for the standard deviation of 'Maternal.Age'**\
+
+- Repeat both steps 200 times via a nested for-loop to create 200 different 95% confidence intervals\
+
+```{r eval=FALSE, include=FALSE}
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+set.seed(123456)
+
+# Use this box to answer the questions.
+```
+
+The code from Question 4 can serve as a template. Make sure you set the random counter to `123456` when sampling. Use the code box below for your computations.
+
+```{r eval=FALSE, include=FALSE}
+# To execute the chunk, make sure you change the setting to the default (or delete eval=FALSE, include=FALSE)
+set.seed(123456)
+
+
+# place for your workings
+
+```
+

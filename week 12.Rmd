@@ -1,0 +1,369 @@
+---
+title: "STAT1400 Statistics for Science"
+subtitle: "Computer Lab Week 12"
+output:
+  html_document: 
+    toc: true
+  html_notebook: default
+  pdf_document: 
+    toc: true
+    number_sections: yes
+  word_document: 
+    toc: true
+# date: '`r format(Sys.time(), "%d %B %Y, %H:%M ")`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	error = FALSE,
+	message = FALSE,
+	comment = NA,
+	prompt = FALSE,
+	tidy = TRUE
+)
+```
+
+
+# Learning Check
+
+In this lab you should read through and run the code in the lab sheet and complete the lab assessment. 
+
+By the end of this lab you should be able to use R to:
+
+1. randomly generate bootstrap resamples from a small sample using 'boot' R package;
+2. use R output to describe the results of a bootstrap analysis of the mean using 'boot' R package;
+3. use the bootstrap distribution to find a bootstrap percentile confidence interval;
+4. perform a permutation test for two-sample problem and a matched pairs study using the R package 'CarletonStats';
+5. (OPTIONAL) perform a detailed permutation test using an R package `gtools`.
+
+
+**Run the next block of code please. It ensures that random sampling is reproducible. You need to re-run this block every time you restart the lab sheet!!!**
+
+```{r RNG Check}
+## You MUST run this code (every time you open the lab sheet).
+aux <- version
+if (((as.numeric(aux$major) >= 3) && (as.numeric(aux$minor) >= 6)) || (as.numeric(aux$major) >= 4)) {
+  RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rounding")
+} else {
+  RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion")
+}
+
+set.seed(12345)
+cat("1st check: 5 = ",sample(1:6,1),"\n",sep="")
+cat("2nd check: 9 = ",ceiling(runif(1,0,10)),"\n",sep="")
+cat("If the statements above are right, then it is ok.\n",sep="")
+cat("\n",sep="")
+cat("If you get a warning message as below, this is ok. \n   'Warning message in RNGkind(kind = ",'"',"Mersenne-Twister",'"',
+    ", normal.kind = ",'"',"Inversion",'"',", :\n",'   "',"non-uniform 'Rounding' sampler used",'"',"\n",sep="")
+```
+
+To access the dataset:
+
+```{r}
+print(load("Workshop3.RData"))
+```
+
+```{r}
+install.packages("boot")
+install.packages("CarletonStats")
+install.packages("gtools") # OPTIONAL
+```
+```{r}
+library("boot")
+boot
+```
+## Question 1 Calls data: Bootstrapping Confidence Interval
+```{r}
+gosset.data <- c(94, 66, 46, 140, 78, 24)
+hist(gosset.data)  ## checking histogram, expect symmetry if Normal
+```
+The vector `Calls` contains the length in seconds of a random selection of calls to a call centre during one day of operation. As you will see when you plot the data below, it is highly skewed. We're going to compare confidence intervals for the mean using (a) the $t$-distribution, and (b) using the bootstrap distribution.
+```{r}
+
+```
+
+
+
+
+a. Plot a histogram of the data and comment. 
+
+b. Create R code that will produce a bootstrap distribution consisting of the sample mean from 3000 resamples *with replacement* from the original data. 
+  
+Hint. Use boot(), with statistic=theta, R=3000 as in Lab 11 (name it as Calls.boot). Use set.seed(1400)
+  
+c. Plot the bootstrap distribution and comment on its shape.
+```{r}
+theta <- function(data, indices) {
+    d <- data[indices]
+    mean(d)
+}
+```
+```{r}
+require(boot)
+library(boot)
+set.seed(1400)
+Calls.boot <- boot(gosset.data, statistic = theta, R = 3000)
+Calls.boot
+```
+
+```{r eval=F, echo=F}
+hist(Calls.boot$t)
+```
+
+d. Using the function `quantile`, calculate a (naive) 95% bootstrap confidence interval, and compare it with the result obtained from the original sample mean +/- 1.96 standard errors (as output from a call to t.test)
+
+
+```{r echo=F, eval=F}
+# mean and 95% bootstrap confidence interval
+mean(Calls.boot)
+quantile(Calls.boot$t,c(0.025,0.975))
+```
+
+```{r echo=F, eval=F}
+# mean and 95% CI from original sample
+mean(Calls)
+t.test(Calls)$conf.int
+
+```
+
+e. Add the 95% confidence intervals to the bootstrap histogram, and comment.
+
+```{r}
+## OPTIONAL, ADVANCED CODE
+## Make sure you already have Calls.boot and t.test in a-d
+hist(Calls.boot$t)
+lines(rep(mean(Calls.boot),2),c(0,2100),col="red",lwd=2)
+lines(rep(quantile(Calls.boot$t,c(0.025)),2),c(0,450),col="red",lwd=2)
+lines(rep(quantile(Calls.boot$t,c(0.975)),2),c(0,450),col="red",lwd=2)
+lines(rep(mean(Calls),2),c(0,2100),col="blue",lwd=3,lty=2)  # original sample mean
+lines(rep(t.test(Calls)$conf.int[1],2),c(0,450),col="blue",lwd=3,lty=2)  # original 95% CI lower bound
+lines(rep(t.test(Calls)$conf.int[2],2),c(0,450),col="blue",lwd=3,lty=2)  # original 95% CI upper bound
+```
+  
+## Question 2 Bootstrap distribution of Facebook profile
+
+Consider a small random subset of the Facebook profile data: 
+
+4.02 3.03 4.35 8.33 1.40 5.08 
+
+Hint. Use Lab 11 Solution for Gosset data for this question.
+
+```{r}
+profile <-c(4.02, 3.03, 4.35, 8.33, 1.40, 5.08)
+```
+a. We read the data and then create histogram, QQ plot and Shapiro test for Normality.
+```{r}
+hist(profile)
+qqnorm(profile)
+qqline(profile)
+shapiro.test(profile)
+```
+
+b.  [OPTIONAL, NOT ASSESSED]  Provide the sample mean, standard deviation and 95% confidence interval for the mean of the data using `t.test` in R.
+
+```{r}
+t.test(profile)
+```
+
+```{r}
+set.seed(1400)
+profile <-c(4.02, 3.03, 4.35, 8.33, 1.40, 5.08)
+R = 3000
+bootstrap_mean = numeric(R)
+set.seed(1400)
+boot_mean = c()
+for (i in 1:R) {
+  bootsample = sample(profile,size = length(profile),replace = T)
+  boot_mean[i] = mean(bootsample)
+}
+results = boot_mean
+mean(results)
+sd(results)
+interval_1 = quantile(results,0.025)
+interval_1
+interval_2 = quantile(results,0.975)
+interval_2
+```
+c. Perform $R=3000$ bootstrapping resamples from this set of data. Provide the bootstrapped mean, standard error and 95% confidence interval for the bootstrapped mean of the data using `boot` in R.
+```{r}
+set.seed(1400)
+profile <-c(4.02, 3.03, 4.35, 8.33, 1.40, 5.08)
+R = 3000
+boots_mean = numeric(R)
+for (i in 1:R) {
+  sample_1 = sample(profile, length(profile), replace = TRUE)
+  boots_mean[i] = mean(sample_1)
+}
+boot_mean = mean(boots_mean)
+boot_se = sd(boots_mean)
+boot_ci = quantile(boots_mean, c(0.025,0.975))
+boot_mean
+boot_se
+boot_ci
+```
+## Question 3: Serum data - two sample (Permutation)
+
+Serum retinol (vitamin) in the blood of children has beneficial effects, such as protecting against fractures. Medical researchers working with children in PNG studied whether recent infections reduced the level of serum retinol. They classified children as recently infected or not on the basis of other blood tests and then measured serum retinol level ($\mu$mol/l).
+
+a. Summarize and plot the data in `Retinol`. Comment on the shape of the distributions. Is a parametric test appropriate?
+normal distribution yes
+
+```{r}
+head(Retinol)
+```
+```{r}
+table(Retinol$infection)
+```
+```{r}
+boxplot(retinol~infection,data = Retinol)
+```
+
+
+
+
+```{r echo=F, eval=F}
+boxplot(retinol~infection,data=Retinol,main="Infection status")
+```
+
+
+b. (NOT ASSESSABLE) Carry out an appropriate t test to determine whether infections reduce serum retinol level. What are the null and alternative hypotheses? What do you conclude?
+null: recent infections didnt reduce the level of serum retinol
+alternative: recent infections reduced the level of serum retinol level.
+
+c. How might you produce a single permutation of the data under a null hypothesis of no difference between the serum levels of the two groups?   
+
+d. Carry out a permutation test to determine whether infections reduce serum retinol level using *PermTest* command in *CarletonStats* R package.
+  
+```{r}
+library(CarletonStats)
+set.seed(1400)
+permTest(Retinol$retinol, Retinol$infection,  alternative = "greater")
+```
+ˆ
+```{r}
+permTest(Retinol$retinol,Retinol$infection,alternative = "less")
+```
+
+
+e. (OPTIONAL, NOT ASSESSABLE) The code below will produce a vector (`PermDist`) containing the permutation distribution. It simply calculates the mean difference between 'Not Infected' and 'Infected' groups for all possible permutations. After you have installed the package `gtools`, run this chunk, but if you want to 'knit' this file, make sure you change `eval=FALSE` to `eval=TRUE`.
+  
+```{r}
+# First, we need to install the package 'gtools' and then load it into our current session
+# Install the package by going to Tools -> Install Packages, (if not already in list), and then 
+
+library(gtools)
+
+# Calculate the difference between the mean of serum retinol levels in uninfected and infected children.
+
+observed.meandiff <- mean(Retinol$retinol[Retinol$infection=="no"]) - mean(Retinol$retinol[Retinol$infection=="yes"])
+
+# Generate a matrix containing all possible permutations of the indices for the 'non-infected' children (ie 9 out of the 20)
+Perms <- combinations(20, 9)
+
+# For all these possible combinations, calculate the difference between the mean; the result will be very long vector containing the permutation distribution
+## the following code takes each row of the matrix Perms and uses this as the first input argument to the defined function
+PermDist <- apply(Perms, 1, function(ind,vals){
+  mean(vals[(1:20)[ind]])-mean(vals[(1:20)[-ind]])
+},Retinol$retinol)
+```
+
+How large is the matrix `Perms` that has just been created? Have a look at the first few rows of `Perms` to make sure you understand what it represents. 
+
+How many values are there in the permutation distribution? Plot a histogram of the permutation distribution, and mark on the observed mean difference.
+
+  
+```{r}
+# This should be easy!
+par(mfrow=c(1,1))
+hist(PermDist)
+lines(rep(observed.meandiff,2),c(0,10000),lwd=2,col="red")
+```
+
+```{r}
+set.seed(1400)  ### do not change this set.seed
+
+Story_2 <- c(0.77, 0.49,0.66,0.28,0.38)
+Story_1  <- c(0.40,0.72,0.00,0.36,0.55)
+permTestPaired(Story_1,Story_2,alternative = "two.sided")
+```
+
+
+
+f. (OPTIONAL, continuing part e) The exact $p$-value is the number of times the values in the permutation distribution are equal to or exceed the observed mean difference, divided by the number of permutations. Calculate it. Compare it with the $p$-value you calculate using the rank-based test.
+  
+```{r}
+# 
+mean(PermDist>observed.meandiff)
+```
+
+
+
+## Question 4 Paired data- Permutation test
+
+To carry out the hypothesis test in two sample, we permuted the observations between the two groups. In carrying out hypothesis testing for paired data, however, we cannot mix results for different observations. Instead, we carry out the permutation within each paired observations. Thus, if there are $n$ paired observations, there will be $2^n$ permutations.
+
+In this question, we will use the `Shoes` data, where we want to test whether the wear of material B is greater than that of material A.
+
+```{r}
+head(Shoes)
+```
+```{r}
+mean <- mean(Shoes$matB - Shoes$matA)
+mean
+```
+
+  a. Calculate the difference between the wear of material B and material A, and store it into a vector. What is the mean difference?
+  
+```{r echo=F, eval=F}
+mean.weardiff<-mean(Shoes$matB-Shoes$matA)
+mean.weardiff
+```
+
+
+  b. Plot the differences in a useful way, and comment.
+
+
+  c. (OPTIONAL) What would one permutation of this data be? How many permutations of the sample labels are possible for these data? 
+
+Generate using the following
+  
+```{r}
+PermDiffs<-permutations(2,10,c(-1,1),repeats=TRUE)
+dim(PermDiffs)
+head(PermDiffs)
+```
+```{r}
+set.seed(1400)
+permTestPaired(Shoes$matB,Shoes$matA,alternative = "greater")
+```
+  
+
+
+
+
+
+  d. Carry out a permutation test to test whether the wear of material B is greater than that of material A using *PermTestPaired* command in *CarletonStats* R package. What is the $p$-value, and what do you conclude?
+  
+```{r}
+library(CarletonStats)
+set.seed(1400)
+permTestPaired(Shoes$matB, Shoes$matA,  alternative = "greater")
+```  
+
+
+e. (OPTIONAL, NOT ASSESSABLE) Using the permutation matrix and some simple matrix algebra you can calculate the permutation distribution. Store the resulting vector and plot it as a histogram. Where would the observed test statistic sit? What is the $p$-value, and what do you conclude?
+  
+```{r}
+PermDiffsDist<-(PermDiffs%*%abs(Shoes$matB-Shoes$matA))/10
+hist(PermDiffsDist)
+lines(rep(mean.weardiff,2),c(0,100),lwd=2,col="red")
+
+```
+
+
+
+
+
+
+

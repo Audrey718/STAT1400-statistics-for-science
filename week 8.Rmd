@@ -1,0 +1,296 @@
+---
+title: "STAT1400 Statistics for Science"
+subtitle: "Computer Lab Week 8"
+output:
+  html_document: 
+    toc: true
+  html_notebook: default
+  pdf_document: 
+    toc: true
+    number_sections: yes
+  word_document: 
+    toc: true
+# date: '`r format(Sys.time(), "%d %B %Y, %H:%M ")`'
+---
+
+```{r}
+knitr::opts_chunk$set(prompt=FALSE, comment=NA, message=FALSE, tidy=TRUE, error=FALSE, eval=TRUE)
+```
+
+
+# Learning Check
+
+In this lab you should read through and run the code in the lab sheet and complete the lab assessment. 
+
+When you complete this session, you will be able to:
+
+1. understand the important steps in an hypothesis test;
+2. understand the central limit theorem and its importance in statistical inference;
+3. test hypotheses about a single population proportion.
+4. understand error types in hypothesis testing;
+5. construct a confidence interval for a single population proportion;
+
+
+## Question 1: Central Limit Theorem
+
+The first column of the dataset *central.csv* consists of random numbers from the exponential distribution with a mean of 1 and standard deviation of 1 as the original population.
+
+Every number in the second column (labelled $n=5$) of the dataset *central.csv* file is the mean of 5 numbers that have each been sampled from this same population. 
+
+Every number in the third column (labelled $n=10$) is the mean of 10 numbers that have each been sampled from this same population, and so on for the $n=50$ and $n=100$ columns as well. 
+```{r}
+central <- read.csv("central.csv")
+central
+```
+
+(a) Explore the distributions for each variable (n=1,5,10, 50,100) by providing the following: 
+
+            - Sample Means 
+            - Sample Std Dev
+            - Sigma/sqrt(n)
+            - Histogram and QQ plots
+```{r}
+mean(central$N.1)
+sd(central$N.1)
+sqrt(central$N.1)
+hist(central$N.1)
+```       
+```{r}
+colMeans(central)
+col.SD <- apply(central, 2, sd)
+col.SD
+```
+
+
+
+
+
+
+
+
+```{r}
+mean(central$N.5)
+sd(central$N.5)
+sqrt(central$N.5)
+hist(central$N.5)
+```     
+```{r}
+mean(central$N.50)
+sd(central$N.50)
+sqrt(central$N.50)
+hist(central$N.50)
+```     
+```{r}
+mean(central$N.100)
+sd(central$N.100)
+sqrt(central$N.100)
+hist(central$N.100)
+```     
+(b) Describe what happens to the shape, location and spread of the sampling distribution of the sample mean compared to the original or parent distribution as the sample size increases.
+   shape skewed to left to symmertic
+   spread decrease
+   location
+(c) Use the histograms and normal quantile plots for each variable to assess the normality of each variable.
+```{r}
+qqnorm(central$N.1)
+qqline(central$N.1)
+qqnorm(central$N.5)
+qqline(central$N.5)
+qqnorm(central$N.50)
+qqline(central$N.50)
+qqnorm(central$N.100)
+qqline(central$N.100)
+```
+(d) What would happen if the original or parent distribution was different? Eg what if it were the uniform distribution or the normal distribution?
+no change
+(e) This exercise illustrates the central limit theorem. State the central limit theorem.
+the distribution of sample means approximately a normal distribution as the sample size gets larger, regardless of the population's distribution.
+```{r}
+colMeans(central)
+```
+```{r}
+col.sd <- apply(central, 2, sd)
+col.sd
+```
+```{r}
+col.sample.sd <- 1/sqrt(c(1,5,10,50,100))
+col.sample.sd
+```
+```{r}
+hist(central$N.1)
+abline(v=1, col= 3)
+qqnorm(central$N.1)
+qqline(central$N.1)
+hist(central$N.100)
+abline(v=1, col= 3)
+qqnorm(central$N.100)
+qqline(central$N.100)
+```
+
+
+## Question 2 Cellophane flowers of yellow and green
+
+A plant geneticist has raised 100 progeny from a cross that is hypothesized to result in a 3:1 phenotypic ratio of yellow flowered to green flowered plants. A ratio of 84 yellow:16 green is observed.
+
+(a) Write down the null and alternative hypotheses.
+let p equals to the proportion of yellow flowered
+null :the phenotypic ratio of yellow flowered is 3/4
+alternative :the phenotypic ratio is not equal to 3/4
+(b) How many flowers of each type would you expect if the null hypothesis is true?
+yellow 75 green 25
+(c) Calculate the appropriate test statistic and corresponding p-value.
+p^ = 84/100 p0 = 3/4 n = 100
+```{r}
+p0 = 3/4
+phat = 84/100
+n = 100
+se.p=sqrt(p0*(1-p0)/n)
+se.p
+test.stat=(phat-p0)/(se.p)
+test.stat
+```
+(d) What conclusion can be made?
+```{r}
+1-pnorm(2.078461) + pnorm(-2.078461)
+pnorm(-2.08)*2
+```
+the p-value is very small so we reject the null
+## Question 3: Confidence Intervals - single population proportion
+
+What is the proportion of people in the Australian population who
+are left handed? A sample of 90 people is surveyed. 16 state that
+they are left handed.
+
+(a) Using the formula from the notes, calculate a 95\% confidence interval for the proportion of Australians who are left handed.
+
+(b) Create an R function of sample size $n$, the number of success $x$ and a confidence level $\alpha$ to calculate $(1-\alpha)\%$ confidence interval. Check if the function has correctly calculate the results in (a).
+
+```{r}
+qnorm(0.975)
+qnorm(0.025)
+```
+```{r}
+## fill in below
+prop.ci.fn <- function(n=90,x=16,alpha=0.05){  ### n sample size, x number of success, CI 1-alpha
+  phat=x/n
+  se.p=sqrt(phat*(1-phat)/n)
+  znorm=qnorm(1-alpha/2)
+  me=znorm * se.p
+  lower=phat - me
+  upper=phat + me
+  return(c(phat, se.p, znorm, me, lower, upper))
+}
+
+prop.ci.fn(90, 16, 0.05)
+prop.ci.fn(100, 30, 0.05)
+```
+
+
+(c) What assumptions have you made in calculating this confidence interval?
+
+
+## Question 4: Adults and video games
+
+A PriceWaterhouseCooper report estimates that the U.S. video game market was approximately \$8.6 billion in 2007 and is expected to increase at an annual rate of 6.3\% through 2012. Who actually plays
+video games? A survey, conducted by Princeton Survey Research International, reports that over half of American adults aged 18 and over play video games. The survey used a nationally representative
+sample of 2054 adults. Of the total, 1063 adults said they played video games. 
+
+(a) Estimate the proportion of adults in the population who play video games.
+
+(b) Calculate the 90\% confidence interval for the proportion of adults in the population who play video games.
+
+(c) Suppose that there is a new claim that the proportion of adults in the population who play video games is more than 50\%. Conduct the appropriate steps for hypothesis testing to make a conclusion. Use a significance level of 10\%.
+
+### Exercise
+
+Can you write an R function for the hypothesis testing in a similar way as the CI?
+```{r}
+inter = function(n,x,alpha){
+phat = x/n
+znorm = qnorm(1-alpha/2)
+ph = sqrt(x/n*(1-x/n)/n)
+me = znorm * ph
+upper = phat + me
+lower = phat - me
+return(c(phat, se.p, znorm, me, lower, upper))
+}
+inter(50,6,0.01)
+inter(50,38,0.1)
+inter(200,24,0.1)
+inter(200,24,0.01)
+```
+```{r}
+qnorm(0.95)
+
+```
+
+```{r}
+oneside = function(n, y, p){
+  phat = y/n
+  z = (phat - p)/sqrt(p*(1-p)/n)
+  znorm = 1- pnorm(z)
+  return(c(phat, z, znorm))
+}
+oneside(2054, 1063, 0.5)
+oneside(50, 38, 0.7)
+oneside(50,6,0.1)
+oneside(724,72,0.07)
+oneside(200,24,0.1)
+## Question 5 Error Types: Effectiveness of new drug
+```
+ A pharmaceutical company is testing a new drug for acne. Side-effects for the new drug may include vomiting, nausea and/or fever. Subjects are randomly assigned to a control group (placebo) and treatment group (new drug). Proportion of subjects in each group whose acne is reduced  is calculated and compared between groups.
+```{r}
+pnorm(0.9258)
+```
+(a) State the null and alternative hypotheses.
+null: P1 = p2 p1 is not equal to p2 p1<p2 0r p1>p2
+(b) What is a Type I error and a Type II error in this context?
+one it actually does damange to patients but they think it is not damaging
+two it is effective but they think not
+(c) Explain the consequence of committing a Type I error and Type II error.
+
+(d) Which error type appears more serious and why?
+type one 
+(e) How strong should the evidence be before rejecting the null hypothesis in this example? In other words, assuming that this test is to be carried out at a fixed significance level, what would be an appropriate level?
+
+```{r}
+# Load the ggplot2 library to access the diamonds dataset
+library(ggplot2)
+
+# Take an initial random sample of size 1000 from the diamonds dataset
+set.seed(123)  # Setting seed for reproducibility
+initial_sample <- diamonds[sample(nrow(diamonds), 1000, replace = FALSE), ]
+
+# Initialize a vector to store the medians from each bootstrap sample
+bootstrap_medians <- numeric(1000)
+
+# Perform bootstrap sampling 1000 times
+for (i in 1:5000) {
+  # Sample with replacement from the initial sample
+  bootstrap_sample <- initial_sample[sample(nrow(initial_sample), replace = TRUE), ]
+  
+  # Calculate the median price of the bootstrap sample
+  bootstrap_medians[i] <- median(bootstrap_sample$price)
+}
+
+# Calculate the 90% confidence interval of the medians
+quantile(bootstrap_medians, probs = c(0.005, 0.995))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

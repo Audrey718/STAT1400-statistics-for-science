@@ -1,0 +1,744 @@
+---
+title: "STAT1400 Statistics for Science"
+subtitle: "Computer Lab Week 4"
+output:
+  html_document: 
+    toc: true
+  html_notebook: default
+  pdf_document: 
+    toc: true
+    number_sections: yes
+  word_document: 
+    toc: true
+ # date: '`r format(Sys.time(), "%d %B %Y, %H:%M ")`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(prompt=FALSE, comment=NA, message=FALSE, tidy=TRUE, error=FALSE, eval=TRUE)
+```
+
+
+## Learning Check
+
+When you complete this session, you will be able to:
+
+1. introduce you to the notion of 'modeling' the data;
+
+2. be able to create simple graphs using R to explore such bivariate relationships;
+
+3. be able to use correlation analysis to investigate a linear relationship between two continuous variables;
+
+4. fit a simple linear regression model to some datasets;
+
+5. be able to perform residual analysis or diagnostics checking.
+
+
+A typical data science project has a flow chart process like this
+
+![Data Science flow chart (Wickham)](data-science.png)
+
+The step *import* means to import your data into R, which means to store the data in a file, database, or web application programming interface (API), and load it into a _data frame_ in R.
+
+The step *tidy* means to tidy your data in which each column is a variable, and each row is an observation (data frame).
+
+The step *transform* means to apply some kind of transformation includes narrowing in on observations of interest (like all 
+people in one city, or all data from the last year), creating new variables that are functions of existing variables (like 
+computing speed from distance and time), and calculating a set of summary statistics (like counts or means).
+
+The step *wrangling* means to combine tidying and transforming.
+
+The steps *visualisation and modelling*  will be iterated between them many times. This is called *Exploratory Data Analysis (EDA)*
+
+To plot two categorical variables use a _mosaic plot_. 
+
+To plot two continuous variables use a _scatterplot_. 
+
+To plot one categorical (x-axis) and one numerical (y-axis) use a _boxplot_.
+
+# Question 1. Simple Relationships Between Variables: Revisiting bigclass.csv data set
+
+Read the _bigclass.csv_ file. In the previous lab we explored the distribution of individual variables in this data set. We will now use R (base package) to help us explore the relationships between variables.
+
+1. A better way to explore the relationship between the continuous variable _Height_ and the nominal variable _Sex_ is to use side-by-side boxplots.
+
+- Compare the relationship between  _Height_ and  _Sex_  using side-by-side boxplots.
+
+- Obtain the numerical summaries of Height by Sex.
+
+2. In this context, we are interested to explore the relationship between _Height_ and _Weight_. Define the explanatory and response variables. 
+
+3. Scatterplots with definite patterns in the data, such as straight lines, repeating patterns, exponential shapes or even no pattern, give clues as to the form of that relationship.  
+
+In this unit, we will focus mainly on linear relationships. To explore the relationship between height and weight of students in the data set, create the scatterplot.
+
+Describe briefly what the scatterplot shows. The following points may help - is the relationship between weight and height positive or negative, linear or non-linear, strong or weak?
+```{r}
+bigclass<- read.csv("bigclass.csv")
+bigclass
+```
+```{r}
+boxplot(bigclass$Height ~ bigclass$Sex)
+boxplot
+```
+```{r}
+big.lm = lm(bigclass$Height~bigclass$Sex)
+plot(big.lm)
+```
+
+
+
+
+
+
+
+
+# Question 2: Meadow dataset (UWA unit content Sem 1 2023)
+
+## 2.1 Exploration
+
+A meadowfoam is a small plant found growing on moist meadows in the US Pacific Northwest. Researchers reported the results from one study in a series designed to find out how to elevate meadowfoam production to a profitable crop. In a controlled growth chamber they focused on the effects of two light related factors; light intensity and the timing of the onset of the light treatment. The outcome of interest was the average number of flowers per meadowfoam plant. 
+
+The results of this experiment can be found in the _meadowfoam.csv_ file.
+
+```{r}
+meadow <- read.csv("week-meadowfoam.csv")
+head(meadow)
+```
+```{r}
+sd(meadow$Flowers)
+var(meadow$Flowers)
+IQR(meadow$Intensity)
+```
+```{r}
+summary(meadow$Intensity)
+meadow$Intensity <- as.factor(meadow$Intensity)
+summary(meadow$Intensity)
+```
+```{r}
+meadow = read.csv("week-meadowfoam.csv")
+head(meadow)
+summary(meadow$Intensity)
+meadow$Intensity <- as.factor(meadow$Intensity)
+summary(meadow$Intensity)
+boxplot(meadow$Flowers,meadow$Intensity)
+```
+```{r}
+boxplot(meadow$Flowers)
+boxplot(meadow$Flowers ~ meadow$Intensity)
+```
+
+
+For the last time today, make yourself familiar with the datafile using the summary statistic, histograms for numerical and barplots for categorical variables. Then think about the following questions:
+
+*What is the standard deviation of 'Flowers'? What is the variance?*
+
+*What is the inter quartile range of 'Intensity'?*
+
+The 'Intensity' variable is a numerical variable. However, since only six different intensities are observed, we may want to interpret it as a categorical variable. This can be done by changing it to a factor variable in R using the 'as.factor' function. This conversion is done for you below.
+
+```{r}
+summary(meadow$Intensity)
+meadow$Intensity <- as.factor(meadow$Intensity)
+summary(meadow$Intensity)
+```
+
+Now use your abilities to create a boxplot of 'Flowers' for each of the six intensity groups in one graph.
+
+*Which intensity value appears to result in the highest average number of flowers per plant?*
+
+```{r}
+# this chunk is meant for you to create the boxplots.
+```
+
+## 2.2 Scatterplot
+
+
+```{r}
+library(ggplot2)
+```
+
+
+We will now take a look at yet another visualisation, which maps two numeric variables. It is called a "scatterplot". We will use the 'Intensity' and the 'Flowers' variables. However, since we have led R to interpret the 'Intensity' variable as a categorical variable, we will firstly have to reverse it back to a numerical variable. 
+
+```{r}
+meadow$Intensity <- as.numeric(meadow$Intensity)
+summary(meadow$Intensity)
+```
+
+Now we can create a scatterplot as follows:
+
+```{r}
+ggplot(data= meadow, mapping = aes(x = Intensity, y = Flowers )) + geom_point()
+```
+
+*What kind of relationship between the variables 'Intensity' and 'Flowers' can you observe from the graph?*
+negative
+*Why are those two the only reasonable variables from the datafile to use in a scatterplot?*
+
+We can further use coloured points to distinguish between the two 'Time' groups by setting `col = Time`.
+
+```{r}
+ggplot(data= meadow, mapping = aes(x = Intensity, y = Flowers , col = Time)) + geom_point()
+```
+
+In R we can also create so called "multiplots". Use the `par()` command like shown below to do so. Use `?par` to read up on this command as well if you wish. Please run the code in the next line first to optimise visualisation.
+
+```{r}
+#resetting plot size
+options(repr.plot.width=5, repr.plot.height=5,repr.plot.res = 120)
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(meadow$Flowers, main="Histogram of Flowers")
+boxplot(meadow$Flowers, main="Boxplot of Flowers")
+plot(meadow$Intensity,meadow$Flowers, main="Scatterplot Intensity and Flowers")
+```
+```{r}
+#meadow$Time <- as.numeric(meadow$Time)
+summary(meadow$Time)
+```
+
+
+```{r}
+par(mfrow = c(2, 2))
+hist(meadow$Flowers, main = "Histogram of Flowers")
+boxplot(meadow$Flowers, main = "Boxplot of Flowers")
+plot(meadow$Intensity, meadow$Flowers, main = "Scatterplot Intensity and Flowers")
+meadow$Time <- as.factor(meadow$Time)
+table(meadow$Time)
+barplot(table(meadow$Time),main = "barplot of Time")
+```
+
+```{r}
+install.packages("ISLR2")
+```
+
+```{r}
+library("ISLR2")
+```
+```{r}
+mtcars
+```
+```{r}
+summary(mtcars$qsec)
+summary(mtcars$mpg)
+summary(mtcars$drat)
+summary(mtcars$wt)
+summary(mtcars$disp)
+```
+```{r}
+round(3.610,2)
+round(6.026948,2)
+```
+```{r}
+var(mtcars$mpg)
+sd(mtcars$mpg)
+```
+```{r}
+data("Credit")
+head(Credit)
+```
+```{r}
+table(Credit$Student,Credit$Own)
+```
+```{r}
+table(Credit$Own)
+```
+```{r}
+round(0.393782,4)
+```
+```{r}
+table(Credit$Married,Credit$Own)
+```
+```{r}
+data("Credit")
+head(Credit)
+summary(Credit$Age)
+boxplot(Credit$Age)
+```
+```{r}
+summary(Credit$Age)
+```
+```{r}
+summary(Credit$Income)
+```
+```{r}
+plot(Credit$Age)
+```
+```{r}
+data("Carseats")
+head(Carseats)
+```
+```{r}
+table(Carseats$US)
+```
+```{r}
+Carseats<- subset(Carseats,US="Yes")
+head(Carseats)
+dim(Carseats)
+summary(Carseats$Price)
+```
+```{r}
+summary(Carseats)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Your last task for today's lab is to create a multiplot, including the three graphs from above as well as a bar plot for the 'Time' variable. Refer to last week's lab sheet on how to create a bar graph.
+
+l¬
+# Complete these lines of code to obtain the desired multiplot
+```{r}
+counts <- table(meadow$Flowers)
+par(mfrow=c(2,2))
+hist(meadow$Flowers, main="Histogram of Flowers")
+boxplot(meadow$Flowers, main="Boxplot of Flowers")
+plot(meadow$Intensity,meadow$Flowers, main="Scatterplot Intensity and Flowers")
+```
+
+
+# Question 3 Correlation: Motor vehicle emissions
+
+Motor vehicles must comply with certain emission standards before they can be sold in Australia. The dataset _emissions.csv_
+contains the results of emissions testing of a sample of 46 vehicles of a particular model.  
+
+Columns _CO, HC_ and _NOx_ represent the emissions of carbon monoxide, hydrocarbons and oxides of nitrogen respectively, all in g/km. The variable _VN_ is a number identifying the particular vehicle being tested.
+
+## Questions
+
+3.1 Use correlation analysis to investigate and describe the relationships between emissions of carbon monoxide, hydrocarbons and oxides of nitrogen for this model vehicle. 
+
+```{r}
+# ?cor
+# cor() to calculate correlation matrix
+```
+
+```{r}
+emmision<- read.csv("emmision.csv")
+emmision
+```
+```{r}
+cor(emmision)
+cor(emmision$VN,emmision$HC)
+```
+
+3.2 Why do we select all 3 variables as Y variables? Why is there no X variable to specify?
+
+3.3 Describe the relationships between the variables.
+
+3.4 What difficulty do you think a vehicle manufacturer may have in achieving low emissions for all 3 variables?
+
+
+
+# Question 4 Old Faithful Geyser data
+
+This dataset can be found within _datasets_ R package.
+
+```{r}
+library(datasets)
+attach(faithful)
+```
+
+
+A geyser is a hot spring in which water boils intermittently, sending a tall column of water and steam into the air. One of the best known geysers in the US is Old Faithful in Yellowstone National Park, Wyoming. It was so named when it was first discovered in 1870 because it was (and is) said to erupt regularly. But what does regularly mean?
+
+The data file for this workshop contains the _R_ data frame `faithful`, which consists of sequential measurements of the duration of an eruption (eruptions, in minutes) and the time to the next eruption (waiting, also in minutes). They were obtained during October 1980 by volunteers. These data were collected so that park rangers could inform tourists when an eruption was likely to occur.
+
+As part of your work with the US National Park Service, you have been tasked with constructing a predictive model for waiting time as a linear function of eruption duration so that park rangers can inform tourists when an eruption is likely to occur.
+
+(a) Produce a scatterplot of the waiting time and length of eruptions. 
+Comment on any patterns you see in the data and on the relationship between waiting time and eruption duration in such a way that a tourist to Old Faithful might understand. 
+
+```{r}
+View(faithful)
+head(faithful)
+# use lm(),  ?lm
+```
+
+
+
+(b). Fit the least squares line to the data using R. Explain the fitted model, by interpreting the slope and intercept.
+
+```{r}
+# use ?lm
+# lm() for the least squares
+```
+
+```{r}
+lm(faithful)
+```
+
+
+# Question 5 Sheather (2009): The timing of production runs.
+
+The original data are in the form of the time taken (in minutes) for a production run, $Y$, and the number of items produced,
+$X$, for 20 randomly selected orders as supervised by three managers. At this stage we shall only consider the data for one of the managers.
+
+(a). Open the Excel file *production.txt*. Construct a scatterplot of production run, $Y$, and the number of items produced, $X$. Fit the least squares line to the data using R. Explain the fitted model, by interpreting the slope and intercept.
+
+```{r}
+production=read.table("production.txt", header=T)
+View(production)
+```
+
+Change 'eval=TRUE' to see the output. Make sure you understand the code line by line.
+
+```{r}
+prod.lm=lm(RunTime ~ RunSize, data=production)
+plot(RunTime ~ RunSize, data=production, xlab="Run Size", ylab="Run Time")
+abline(prod.lm)
+summary(prod.lm)
+```
+
+You will be able to obtain the residuals from 'prod.lm$residuals'
+
+```{r}
+names(prod.lm)
+```
+
+(b). Construct residual diagnostic plots manually, and assess whether you think that the assumptions for linear regression have been satisfied. You can use the function `rstudent` (or `rstandard`) to first standardize the residuals.
+
+We can obtain the residuals (*res*) and the standardised residuals (*std.res*).
+
+```{r}
+names(prod.lm)  ## checking the output of the fitted model, residuals
+```
+
+
+```{r}
+res=prod.lm$residuals
+std.res=rstandard(prod.lm)  ## standardised residuals
+```
+
+First, we check the *normality through histograms and QQ-plots of residuals and standardised residuals respectively.*
+
+*Residuals*
+
+```{r eval=FALSE, include=FALSE}
+par(mfrow=c(1,2))  ## plotting 2 plots to check normality
+hist(res,col=3)
+qqline(res,col=3) #adding a reference normal line on the QQplot
+```
+
+Repeat the above for 'std.res' (standardised residuals) in a new chunk.
+
+
+
+(c). Perform diagnostic checking for the fitted model in (a) using "plot(prod.lm)." You only need to interpret the first three outputs. Interpret these outputs.
+
+
+```{r eval=FALSE, include=FALSE}
+par(mfrow=c(2,2))
+plot(prod.lm) ## you will see 4 plots as per the lecture
+```
+
+
+
+
+# Question 6 Sheather (2009): The data invoices.txt.
+
+
+The manager of the purchasing department of a large company would like to
+develop a regression model to predict the average amount of time it takes to process a given number of invoices. Over a 30-day period, data are collected on the number of invoices processed and the total time taken (in hours). The data are available in the file *invoices.txt.* 
+
+Complete the following tasks using your understanding of Q5. You can follow the previous code for Q5(a)-(c).
+
+```{r}
+invoices=read.table("invoices.txt", header=T)
+View(invoices)
+```
+
+(a). Fit the least squares line to the data using R. Explain the fitted model, by interpreting the slope and intercept.
+
+(b). Construct residual diagnostic plots, and assess whether you think that the assumptions for linear regression have been satisfied. You can use the function `rstudent` (or `rstandard`) to first standardize the residuals.
+
+(c). Perform diagnostic checking for the fitted model in (a) using "plot(file.lm)." You only need to interpret the first three outputs. Interpret the outputs.
+
+
+# Question 7 (OPTIONAL) Linear regression using tidyverse: Height data (Galton)
+
+A very specific question Galton tried to answer was: how well can we predict a child’s height based on the parents’ height? 
+
+Francis Galton studied the variation and heredity of human traits. Among many other traits, Galton collected and studied 
+height data from families to try to understand heredity. While doing this, he developed the concepts of correlation and 
+regression, as well as a connection to pairs of data that follow a normal distribution. Of course, at the time this data was
+collected our knowledge of genetics was quite limited compared to what we know today. 
+
+The dataset can be obtained through the _HistData_ package. This data contains heights on several dozen families: mothers, 
+fathers, daughters, and sons. A dataset with the heights of fathers and a _randomly_ selected son of each family is created 
+below.
+
+```{r}
+library(tidyverse)
+library(HistData)
+data("GaltonFamilies")
+
+set.seed(1983)
+galton_heights <- GaltonFamilies %>%
+  filter(gender == "male") %>%
+  group_by(family) %>%
+  sample_n(1) %>%
+  ungroup() %>%
+  select(father, childHeight) %>%
+  rename(son = childHeight)
+```
+
+1. Summarize the father and son data.
+
+```{r}
+galton_heights %>% 
+  summarize(mean(father), sd(father), mean(son), sd(son))
+```
+
+
+2. Now construct a plot of `Son` against `Father' heights. Our objective is going to be to predict the son' height from a father's height.
+
+```{r}
+galton_heights %>% ggplot(aes(father, son)) + 
+  geom_point(alpha = 0.5)
+```
+
+
+3. Calculate the sample correlation between the son' height and father's height.
+
+```{r}
+galton_heights %>% summarize(r = cor(father, son)) %>% pull(r)
+```
+
+
+4.Construct a linear model relating `Son` against `Father' heights. Replot the data and then plot the least squares line of 
+best fit. Comment.
+
+
+```{r}
+Height.lm <- lm(son~father, data = galton_heights)
+summary(Height.lm)
+```
+
+```{r}
+plot(son~father, data = galton_heights,
+     xlab = "Father", ylab = "Son",
+     col = rgb(0.5, 0, 1, alpha = 0.4), pch = 16)
+abline(Height.lm, lwd = 2)
+```
+
+The best fitted line is
+$$ Son=37.29+0.46 Father.$$
+
+# References
+
+
+1. <https://rafalab.github.io/dsbook/tidyverse.html>
+
+2. <https://r4ds.had.co.nz/data-visualisation.html>
+```{r}
+gpa=c(3.1,    2.3,    3,    1.9,    2.5,    3.7,    3.4,    2.6,    2.8,    1.6,    2,    2.9,    2.3,    3.2,    1.8,    1.4,    2,    3.8,    2.2,    1.5)
+ets=c(5.5,    4.8,    4.7,    3.9,    4.5,    6.2,    6,    5.2,    4.7,    4.3,    4.9,    5.4,    5,    6.3,    4.6,    4.3,    5,    5.9,    4.1,    4.7)
+```
+
+```{r}
+plot(ets,gpa)
+gpa.lm=lm(gpa ~ ets)
+par(mfrow=c(2,2))
+plot(gpa.lm) 
+```
+```{r}
+transfer=c(16 ,   9,    17,    12,    22,    13 ,   8,    15,    19,    11)
+broken=c(1,    0,    2,    0,    3,    1,    0 ,   1,    2,    0)
+```
+```{r}
+tr.lm = lm(broken~transfer)
+tr.lm
+par(mfrow=c(2,2))
+plot(tr.lm)
+```
+```{r}
+
+```
+
+
+
+```{r}
+residuals <- resid(tr.lm) 
+fitted <- fitted(tr.lm)
+
+plot(fitted, residuals, main = "Residuals vs Fitted", xlab = "Fitted values", ylab = "Residuals", pch = 16)
+```
+```{r}
+1-pnorm(97,85,6)
+pnorm(97,85,6)-pnorm(73,85,6)
+qnorm(0.05,85,6)
+```
+```{r}
+library(datarium)
+datarium::marketing
+```
+```{r}
+yu.lm = lm(marketing$sales~marketing$youtube)
+summary(yu.lm)
+```
+```{r}
+age <- c(40,38,40,35,36,37,41,40,37,38,40,38,40,36,40,38,42,39,40,37,36,38,39,40)
+birthweight <- c(2968,2795,3163,2925,2625,2847,3292,3473,2628,3176,3421,2975,3317,2729,2935,2754,3210,2817,3126,2539,2412,2991,2875,3231)
+```
+
+```{r}
+age.lm = lm(birthweight~age)
+summary(age.lm)
+```
+```{r}
+x=c(0,1,2,3,4)
+
+px=c(0.05, 0.1, 0.25, 0.30, 0.30)
+
+exvalue = sum(x*px)
+exvalue
+variance = sum((x-exvalue)^2*px)
+variance
+```
+```{r}
+data(mtcars)
+head(mtcars)
+```
+```{r}
+mpg.lm = lm(mtcars$mpg~mtcars$wt)
+summary(mpg.lm)
+plot(mpg.lm)
+plot(mtcars$wt,mtcars$mpg)
+```
+```{r}
+Age<- c( 1, 2, 3, 4, 5,  6,  7,  8,  9, 10 )
+Price <-c(245,180, 200, 200, 171, 120,115, 69, 60,47)
+```
+```{r}
+plot(Age,Price)
+plot(Price~Age)
+cor(Age,Price)
+```
+```{r}
+muscle<-c(82,    91,    100,    68,    87,    73,    78,    80,    65,    84,    116,    76,    97,    100,    105,    77)
+age <- c(71,    64,    43,    67,    56,    73,    68,    56,    76,    65,    45,    58,    45,    53,    49,    78)
+```
+
+```{r}
+muscle.lm = lm(muscle~age)
+summary(muscle.lm)
+plot(age,muscle)
+cor(age,muscle)
+```
+```{r}
+driving.years <- c(5,2,12,9,15,6,25,16)
+premium <-c(64,77,50,71,44,56,42,60)
+```
+```{r}
+premium.lm = lm(premium~driving.years)
+summary(premium.lm)
+plot(driving.years,premium)
+plot(premium.lm)
+residuals <- resid(premium.lm)
+fitted <- fitted(premium.lm)
+plot(fitted,residuals)
+```
+```{r}
+transfer=c(16 ,   9,    17,    12,    22,    13 ,   8,    15,    19,    11)
+broken=c(1,    0,    2,    0,    3,    1,    0 ,   1,    2,    0)
+```
+```{r}
+broken.lm = lm(broken~transfer)
+summary(broken.lm)
+```
+```{r}
+data("marketing")
+head(marketing)
+```
+```{r}
+sales.lm = lm(marketing$sales~marketing$facebook)
+summary(sales.lm)
+```
+```{r}
+#install.packages("datasets")
+#library(datasets)
+data(mtcars)
+head(mtcars)
+```
+```{r}
+mpg.lm = lm(mtcars$mpg~mtcars$wt)
+summary(mpg.lm)
+plot(mtcars$wt,mtcars$mpg)
+cor(mtcars$wt,mtcars$mpg)
+```
+```{r}
+install.packages("MASS")
+library(MASS)
+data(Cars93)
+str(Cars93)
+```
+```{r}
+price.lm = lm(Cars93$Price~Cars93$Horsepower)
+summary(price.lm)
+plot(Cars93$Horsepower,Cars93$Price)
+cor(Cars93$Horsepower,Cars93$Price)
+```
+```{r}
+sales=c(1843.01 ,134.48 ,469.66 ,467.65 ,2626.07 ,805.89 ,909.5 ,77.77 ,1793.48 ,217.96 ,453.84 ,938.11 ,1962.19 ,2579.76 ,198.14 ,303.88 ,2361.85 ,949.87 ,360.61 ,2016.32 ,113.4 ,292.88 ,1386.37 ,140.51 ,387.87 ,551.11 ,284.24 ,341.5 ,299.84 ,151.12 ,68.64 ,1471.59 ,535.11 ,1642.11 ,370.22 ,249.12 ,557.65 ,236.64 ,112.87 ,674.44 ,1490.8 ,131.47 ,458.77 ,489.61 ,1659.04 ,1033.81 ,719.45 ,398.82 ,211.93 ,279.49 ,340.24 ,1098.96 ,1095.93 ,518.03 ,215.41 ,335.44 ,261.72 ,567.37 ,1355.82 ,339.61 ,350.2 ,1046.59 ,1203.1 ,1228.47 ,2791.35 ,992.64 ,232.92 ,288.3 ,209.14 ,342.31 ,484.31 ,107.77 ,1323.47 ,850.19 ,372.22 ,906.26 ,575.31 ,317.53 ,2279.96 ,638.49 ,591.37 ,1676.22 ,398.68 ,1458.04 ,152.77 ,1369.59 ,104.65 ,188.18 ,705.16 ,962.18 ,262.06 ,374.37 ,2093.83 ,246.62 ,458.35 ,996.14 ,495.68 ,411.5 ,143.29 ,1542.81)
+adexp=c(950.1 ,231.1 ,606.8 ,486 ,891.3 ,762.1 ,456.5 ,18.5 ,821.4 ,444.7 ,615.4 ,791.9 ,921.8 ,738.2 ,176.3 ,405.7 ,935.5 ,916.9 ,410.3 ,893.6 ,57.9 ,352.9 ,813.2 ,9.9 ,138.9 ,202.8 ,198.7 ,603.8 ,272.2 ,198.8 ,15.3 ,746.8 ,445.1 ,931.8 ,466 ,418.6 ,846.2 ,525.2 ,202.6 ,672.1 ,838.1 ,19.6 ,681.3 ,379.5 ,831.8 ,502.8 ,709.5 ,428.9 ,304.6 ,189.7 ,193.4 ,682.2 ,302.8 ,541.7 ,150.9 ,697.9 ,378.4 ,860 ,853.7 ,593.6 ,496.6 ,899.8 ,821.6 ,644.9 ,818 ,660.2 ,342 ,289.7 ,341.2 ,534.1 ,727.1 ,309.3 ,838.5 ,568.1 ,370.4 ,702.7 ,546.6 ,444.9 ,694.6 ,621.3 ,794.8 ,956.8 ,522.6 ,880.1 ,173 ,979.7 ,271.4 ,252.3 ,875.7 ,737.3 ,136.5 ,11.8 ,893.9 ,199.1 ,298.7 ,661.4 ,284.4 ,469.2 ,64.8 ,988.3)
+```
+```{r}
+sales.lm = lm(sales~adexp)
+summary(sales.lm)
+plot(sales.lm)
+```
+```{r}
+transfer=c(16 ,   9,    17,    12,    22,    13 ,   8,    15,    19,    11)
+broken=c(1,    0,    2,    0,    3,    1,    0 ,   1,    2,    0)
+```
+```{r}
+broken1.lm = lm(broken~transfer)
+summary(broken1.lm)
+plot(broken1.lm)
+```
+
+```{r}
+round(1-pnorm(8.2,8,0.3),4)
+pnorm(8.2,8,0.3)-pnorm(7.5,8,0.3)
+qnorm(0.75,8,0.3)
+```
+```{r}
+x=c(0,1,2,3,4, 5,6,7)
+
+px=c(0.04, 0.03, 0.06, 0.08, 0.09, 0.08, 0.05, 0.57 )
+value = sum(x*px)
+value
+variance = sum((x-value)^2*px)
+variance
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
